@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import time
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -126,3 +127,23 @@ async def main() -> None:
         await db.close()
         await bot.session.close()
         logger.info("Bot stopped.")
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    _restart_delay = 5
+    while True:
+        try:
+            asyncio.run(main())
+            break
+        except KeyboardInterrupt:
+            logging.info("Bot stopped by user")
+            break
+        except Exception as e:
+            logging.error("Bot crashed: %s. Restarting in %ds...", e, _restart_delay, exc_info=True)
+            time.sleep(_restart_delay)
+            _restart_delay = min(_restart_delay * 2, 60)
