@@ -70,6 +70,17 @@ class WithdrawalRequest:
     created_at: datetime
 
 
+@dataclass
+class Task:
+    id: int
+    title: str
+    description: Optional[str]
+    stars_amount: float
+    url: Optional[str]
+    is_active: bool
+    created_at: datetime
+
+
 SCHEMA = """
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
@@ -173,5 +184,25 @@ CREATE TABLE IF NOT EXISTS subscription_tracking (
     created_at DATETIME DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (referrer_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    stars_amount REAL NOT NULL DEFAULT 1,
+    url TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS task_completions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    completed_at DATETIME DEFAULT (datetime('now')),
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(task_id, user_id)
 );
 """

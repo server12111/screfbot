@@ -3,7 +3,7 @@ from typing import Optional
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.database.models import Sponsor, Promocode
+from bot.database.models import Sponsor, Promocode, Task
 
 
 def _btn(text: str, callback_data: Optional[str] = None, url: Optional[str] = None) -> InlineKeyboardButton:
@@ -26,6 +26,7 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
         _btn("🔑 Промокод", callback_data="enter_promo"),
         _btn("🏅 Рейтинг", callback_data="top_refs"),
     )
+    builder.row(_btn("📋 Задания", callback_data="tasks_list"))
     return builder.as_markup()
 
 
@@ -47,7 +48,21 @@ def withdraw_amount_keyboard(balance: float, min_withdraw: float = 15) -> Inline
     if amounts:
         buttons = [_btn(f"{a} ⭐", callback_data=f"withdraw_amount:{a}") for a in amounts]
         builder.row(*buttons)
-    builder.row(_btn("◀️ Главное меню", callback_data="main_menu"))
+    builder.row(_btn("💸 Канал выплат", url="https://t.me/Monk3yStars"))
+    builder.row(_btn("🏠 На главную", callback_data="main_menu"))
+    return builder.as_markup()
+
+
+def tasks_keyboard(tasks: list[Task], completed_ids: set[int]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for task in tasks:
+        if task.url:
+            builder.row(_btn(f"🔗 {task.title}", url=task.url))
+        if task.id in completed_ids:
+            builder.row(_btn(f"✅ Получено ({task.stars_amount:.0f} ⭐)", callback_data="noop"))
+        else:
+            builder.row(_btn(f"💰 Получить {task.stars_amount:.0f} ⭐", callback_data=f"claim_task:{task.id}"))
+    builder.row(_btn("🏠 На главную", callback_data="main_menu"))
     return builder.as_markup()
 
 
@@ -107,6 +122,25 @@ def admin_panel_keyboard() -> InlineKeyboardMarkup:
     builder.row(_btn("🖼 Фото меню", callback_data="admin_menu_photo"))
     builder.row(_btn("🔢 Макс. спонсоров", callback_data="admin_set_max_sponsors"))
     builder.row(_btn("📣 Рассылка", callback_data="admin_broadcast"))
+    builder.row(_btn("📋 Управление заданиями", callback_data="admin_tasks"))
+    return builder.as_markup()
+
+
+def admin_tasks_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(_btn("➕ Добавить задание", callback_data="admin_add_task"))
+    builder.row(_btn("📋 Список заданий", callback_data="admin_list_tasks"))
+    builder.row(_btn("❌ Удалить задание", callback_data="admin_del_task"))
+    builder.row(_btn("◀️ Назад", callback_data="admin_panel"))
+    return builder.as_markup()
+
+
+def admin_tasks_list_keyboard(tasks: list[Task]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for t in tasks:
+        status = "✅" if t.is_active else "❌"
+        builder.row(_btn(f"🗑 {status} {t.title} — {t.stars_amount:.0f}⭐", callback_data=f"admin_del_task:{t.id}"))
+    builder.row(_btn("◀️ Назад", callback_data="admin_tasks"))
     return builder.as_markup()
 
 

@@ -16,6 +16,8 @@ from bot.keyboards.inline import (
     admin_photo_keyboard,
     admin_promos_list_keyboard,
     admin_sponsors_list_keyboard,
+    admin_tasks_keyboard,
+    admin_tasks_list_keyboard,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,9 @@ class AdminStates(StatesGroup):
     waiting_menu_photo = State()
     waiting_max_sponsors = State()
     waiting_broadcast_text = State()
+    waiting_task_title = State()
+    waiting_task_stars = State()
+    waiting_task_url = State()
 
 
 def _is_admin(user_id: int) -> bool:
@@ -548,6 +553,170 @@ async def msg_broadcast_text(message: Message, state: FSMContext, db: Database, 
             reply_markup=admin_panel_keyboard(),
             parse_mode="HTML",
         )
+
+
+# ── Tasks management ────────────────────────────────────────────────────────────
+
+@router.callback_query(F.data == "admin_tasks")
+async def cb_admin_tasks(callback: CallbackQuery, state: FSMContext) -> None:
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа.", show_alert=True)
+        return
+    await state.clear()
+    await callback.message.edit_text(
+        "📋 <b>Управление заданиями</b>",
+        reply_markup=admin_tasks_keyboard(),
+        parse_mode="HTML",
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin_add_task")
+async def cb_admin_add_task(callback: CallbackQuery, state: FSMContext) -> None:
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа.", show_alert=True)
+        return
+    await state.set_state(AdminStates.waiting_task_title)
+    await callback.message.edit_text(
+        "➕ <b>Добавить задание</b>\n\n"
+        "Шаг 1/3: Введите название задания:",
+        reply_markup=admin_back_keyboard(),
+        parse_mode="HTML",
+    )
+    await callback.answer()
+
+
+@router.message(StateFilter(AdminStates.waiting_task_title))
+async def msg_admin_task_title(message: Message, state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id):
+        return
+    if not message.text or len(message.text.strip()) < 2:
+        await message.answer("❌ Название слишком короткое.", reply_markup=admin_back_keyboard())
+        return
+    await state.update_data(task_title=message.text.strip())
+    await state.set_state(AdminStates.waiting_task_stars)
+    await message.answer(
+        f"✅ Название: <b>{message.text.strip()}</b>\n\n"
+        "Шаг 2/3: Введите количество ⭐ за выполнение:",
+        reply_markup=admin_back_keyboard(),
+        parse_mode="HTML",
+    )
+
+
+@router.message(StateFilter(AdminStates.waiting_task_stars))
+async def msg_admin_task_stars(message: Message, state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id):
+        return
+    try:
+        stars = float(message.text.strip().replace(",", "."))
+        if stars <= 0:
+            raise ValueError
+    except ValueError:
+        await message.answer("❌ Введите положительное число.", reply_markup=admin_back_keyboard())
+        return
+    await state.update_data(task_stars=stars)
+    await state.set_state(AdminStates.waiting_task_url)
+    data = await state.get_data()
+    await message.answer(
+        f"✅ Название: <b>{data['task_title']}</b>\n"
+        f"✅ Награда: <b>{stars:.0f} ⭐</b>\n\n"
+        "Шаг 3/3: Введите ссылку для задания (или отправьте <b>-</b> чтобы пропустить):",
+        reply_markup=admin_back_keyboard(),
+        parse_mode="HTML",
+    )
+
+
+@router.message(StateFilter(AdminStates.waiting_task_url))
+async def msg_admin_task_url(message: Message, state: FSMContext, db: Database) -> None:
+    if not _is_admin(message.from_user.id):
+        return
+    if not message.text:
+        await message.answer("❌ Отправьте ссылку или -", reply_markup=admin_back_keyboard())
+        return
+    raw = message.text.strip()
+    url = None if raw == "-" else raw
+
+    data = await state.get_data()
+    title: str = data["task_title"]
+    stars: float = data["task_stars"]
+
+    await db.create_task(title, stars, url)
+    await state.clear()
+
+    url_line = f"\n🔗 Ссылка: {url}" if url else ""
+    await message.answer(
+        f"✅ <b>Задание создано!</b>\n\n"
+        f"📋 Название: <b>{title}</b>\n"
+        f"💰 Награда: <b>{stars:.0f} ⭐</b>{url_line}",
+        reply_markup=admin_tasks_keyboard(),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data == "admin_list_tasks")
+async def cb_admin_list_tasks(callback: CallbackQuery, db: Database) -> None:
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа.", show_alert=True)
+        return
+    tasks = await db.get_all_tasks()
+    if not tasks:
+        await callback.message.edit_text(
+            "📋 <b>Список заданий</b>\n\nЗаданий нет.",
+            reply_markup=admin_tasks_keyboard(),
+            parse_mode="HTML",
+        )
+    else:
+        await callback.message.edit_text(
+            "📋 <b>Список заданий</b>\n\nНажмите для удаления:",
+            reply_markup=admin_tasks_list_keyboard(tasks),
+            parse_mode="HTML",
+        )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin_del_task")
+async def cb_admin_del_task_prompt(callback: CallbackQuery, db: Database) -> None:
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа.", show_alert=True)
+        return
+    tasks = await db.get_all_tasks()
+    if not tasks:
+        await callback.answer("Нет заданий для удаления.", show_alert=True)
+        return
+    await callback.message.edit_text(
+        "❌ <b>Удалить задание</b>\n\nВыберите задание:",
+        reply_markup=admin_tasks_list_keyboard(tasks),
+        parse_mode="HTML",
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("admin_del_task:"))
+async def cb_admin_del_task_confirm(callback: CallbackQuery, db: Database) -> None:
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа.", show_alert=True)
+        return
+    try:
+        task_id = int(callback.data.split(":")[1])
+    except (IndexError, ValueError):
+        await callback.answer("Ошибка данных.", show_alert=True)
+        return
+    await db.delete_task(task_id)
+
+    tasks = await db.get_all_tasks()
+    if tasks:
+        await callback.message.edit_text(
+            "✅ Задание удалено.\n\n📋 <b>Оставшиеся задания:</b>",
+            reply_markup=admin_tasks_list_keyboard(tasks),
+            parse_mode="HTML",
+        )
+    else:
+        await callback.message.edit_text(
+            "✅ Задание удалено. Список пуст.",
+            reply_markup=admin_tasks_keyboard(),
+            parse_mode="HTML",
+        )
+    await callback.answer("Удалено")
 
 
 @router.callback_query(F.data == "admin_clear_photo")

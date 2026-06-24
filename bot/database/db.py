@@ -5,7 +5,7 @@ from typing import Optional
 
 import aiosqlite
 
-from bot.database.models import SCHEMA, User, Sponsor, Promocode, WithdrawalRequest
+from bot.database.models import SCHEMA, User, Sponsor, Promocode, WithdrawalRequest, Task
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,18 @@ def _row_to_promo(row: aiosqlite.Row) -> Promocode:
         stars_amount=row["stars_amount"],
         max_uses=row["max_uses"],
         uses_count=row["uses_count"],
+        is_active=bool(row["is_active"]),
+        created_at=_parse_dt(row["created_at"]) or datetime.utcnow(),
+    )
+
+
+def _row_to_task(row: aiosqlite.Row) -> Task:
+    return Task(
+        id=row["id"],
+        title=row["title"],
+        description=row["description"],
+        stars_amount=row["stars_amount"],
+        url=row["url"],
         is_active=bool(row["is_active"]),
         created_at=_parse_dt(row["created_at"]) or datetime.utcnow(),
     )
@@ -263,6 +275,65 @@ class Database:
         ) as cur:
             rows = await cur.fetchall()
         return [row[0] for row in rows]
+
+    # ── Tasks ────────────────────────────────────────────────────────────────────
+
+    async def get_active_tasks(self) -> list[Task]:
+        async with self._conn.execute(
+            "SELECT * FROM tasks WHERE is_active = 1 ORDER BY created_at"
+        ) as cur:
+            rows = await cur.fetchall()
+        return [_row_to_task(r) for r in rows]
+
+    async def get_all_tasks(self) -> list[Task]:
+        async with self._conn.execute("SELECT * FROM tasks ORDER BY created_at") as cur:
+            rows = await cur.fetchall()
+        return [_row_to_task(r) for r in rows]
+
+    async def get_task(self, task_id: int) -> Optional[Task]:
+        async with self._conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)) as cur:
+            row = await cur.fetchone()
+        return _row_to_task(row) if row else None
+
+    async def create_task(
+        self,
+        title: str,
+        stars_amount: float,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> int:
+        async with self._conn.execute(
+            "INSERT INTO tasks (title, description, stars_amount, url) VALUES (?, ?, ?, ?)",
+            (title, description, stars_amount, url),
+        ) as cur:
+            last_id = cur.lastrowid
+        await self._conn.commit()
+        return last_id or 0
+
+    async def delete_task(self, task_id: int) -> None:
+        await self._conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        await self._conn.commit()
+
+    async def has_user_completed_task(self, task_id: int, user_id: int) -> bool:
+        async with self._conn.execute(
+            "SELECT 1 FROM task_completions WHERE task_id = ? AND user_id = ?",
+            (task_id, user_id),
+        ) as cur:
+            return await cur.fetchone() is not None
+
+    async def complete_task(self, task_id: int, user_id: int) -> None:
+        await self._conn.execute(
+            "INSERT OR IGNORE INTO task_completions (task_id, user_id) VALUES (?, ?)",
+            (task_id, user_id),
+        )
+        await self._conn.commit()
+
+    async def get_completed_task_ids(self, user_id: int) -> set[int]:
+        async with self._conn.execute(
+            "SELECT task_id FROM task_completions WHERE user_id = ?", (user_id,)
+        ) as cur:
+            rows = await cur.fetchall()
+        return {row[0] for row in rows}
 
     # ── Settings ────────────────────────────────────────────────────────────────
 
