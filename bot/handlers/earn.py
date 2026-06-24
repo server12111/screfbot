@@ -39,12 +39,13 @@ async def cb_earn_stars(
     bot_username = await _get_bot_username(bot)
     ref_link = f"https://t.me/{bot_username}?start=ref_{user.ref_code}"
     ref_count = await db.get_referral_count(user.id)
+    reward = await db.get_ref_reward()
 
     text = (
         "🚀 <b>Реферальная программа</b>\n\n"
         f"Твоя ссылка для приглашения:\n"
         f"<code>{ref_link}</code>\n\n"
-        f"💡 Вознаграждение: <b>от 1 до 5 ⭐ за участника</b>\n"
+        f"💡 Вознаграждение: <b>{reward:.0f} ⭐ за участника</b>\n"
         f"👤 Приглашено: <b>{ref_count}</b>\n"
         f"💎 Всего получено: <b>{user.total_earned:.1f} ⭐</b>\n"
         f"⚡ Баланс: <b>{user.stars_balance:.1f} ⭐</b>\n\n"

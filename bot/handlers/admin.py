@@ -187,10 +187,9 @@ async def cb_admin_set_reward(callback: CallbackQuery, state: FSMContext, db: Da
     current = await db.get_ref_reward()
     await state.set_state(AdminStates.waiting_reward_amount)
     await callback.message.edit_text(
-        f"⭐ <b>Изменить множитель награды</b>\n\n"
-        f"Текущий множитель: <b>{current:.2f} ⭐ за спонсора</b>\n"
-        f"(итоговая награда = множитель × число спонсоров, мин. 1, макс. 5 ⭐)\n\n"
-        "Введите новое значение (например: 0.3):",
+        f"⭐ <b>Изменить награду за реферала</b>\n\n"
+        f"Текущая награда: <b>{current:.0f} ⭐ за участника</b>\n\n"
+        "Введите новое значение (целое число, например: 5):",
         reply_markup=admin_back_keyboard(),
         parse_mode="HTML",
     )
@@ -211,7 +210,7 @@ async def msg_admin_reward(message: Message, state: FSMContext, db: Database) ->
     await db.set_setting("ref_reward", str(value))
     await state.clear()
     await message.answer(
-        f"✅ Множитель награды изменён: <b>{value:.2f} ⭐ за спонсора</b>",
+        f"✅ Награда за реферала изменена: <b>{value:.0f} ⭐ за участника</b>",
         reply_markup=admin_panel_keyboard(),
         parse_mode="HTML",
     )

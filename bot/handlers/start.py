@@ -266,7 +266,7 @@ async def show_main_menu(
 
 def _sponsor_screen_text(total: int, predicted_reward: Optional[float]) -> str:
     reward_line = (
-        f"\n💡 <b>Тебе начислится {predicted_reward:.1f} ⭐</b> после подписки!\n"
+        f"\n💡 <b>После подтверждения начислится {predicted_reward:.0f} ⭐</b>\n"
         if predicted_reward
         else ""
     )

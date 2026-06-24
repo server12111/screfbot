@@ -10,7 +10,7 @@ from bot.database.models import SCHEMA, User, Sponsor, Promocode, WithdrawalRequ
 logger = logging.getLogger(__name__)
 
 DEFAULT_SETTINGS = {
-    "ref_reward": "0.3",
+    "ref_reward": "5",
     "bonus_amount": "5",
     "min_withdraw": "15",
     "menu_photo_file_id": "",
@@ -304,17 +304,12 @@ class Database:
         except (ValueError, TypeError):
             return 0
 
-    async def get_reward_per_sponsor(self) -> float:
-        val = await self.get_setting("ref_reward")
-        return float(val) if val else 0.3
-
     async def calculate_ref_reward(self, sponsor_count: int) -> float:
-        """sponsors * per_sponsor_rate, capped [1, 5]. Returns 0 if no sponsors."""
+        """Fixed reward per referral regardless of sponsor count."""
         if sponsor_count <= 0:
             return 0.0
-        per = await self.get_reward_per_sponsor()
-        raw = sponsor_count * per
-        return max(min(round(raw, 2), 5.0), 1.0)
+        val = await self.get_setting("ref_reward")
+        return float(val) if val else 5.0
 
     # ── Sponsors ────────────────────────────────────────────────────────────────
 
