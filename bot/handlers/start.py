@@ -244,14 +244,22 @@ async def show_main_menu(
         except Exception:
             try:
                 if photo_id:
-                    await message.answer_photo(photo_id, caption=text, reply_markup=kb, parse_mode="HTML")
+                    try:
+                        await message.answer_photo(photo_id, caption=text, reply_markup=kb, parse_mode="HTML")
+                    except Exception:
+                        await db.set_setting("menu_photo_file_id", "")
+                        await message.answer(text, reply_markup=kb, parse_mode="HTML")
                 else:
                     await message.answer(text, reply_markup=kb, parse_mode="HTML")
             except Exception:
                 pass
     else:
         if photo_id:
-            await target.answer_photo(photo_id, caption=text, reply_markup=kb, parse_mode="HTML")
+            try:
+                await target.answer_photo(photo_id, caption=text, reply_markup=kb, parse_mode="HTML")
+            except Exception:
+                await db.set_setting("menu_photo_file_id", "")
+                await target.answer(text, reply_markup=kb, parse_mode="HTML")
         else:
             await target.answer(text, reply_markup=kb, parse_mode="HTML")
 
