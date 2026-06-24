@@ -41,14 +41,14 @@ async def cb_earn_stars(
     ref_count = await db.get_referral_count(user.id)
 
     text = (
-        "⭐ <b>Заработать звёзды</b>\n\n"
-        f"Ваша реферальная ссылка:\n"
+        "🚀 <b>Реферальная программа</b>\n\n"
+        f"Твоя ссылка для приглашения:\n"
         f"<code>{ref_link}</code>\n\n"
-        f"💰 Награда за реферала: <b>от 1 до 5 ⭐</b>\n"
-        f"👥 Приглашено друзей: <b>{ref_count}</b>\n"
-        f"🏆 Всего заработано: <b>{user.total_earned:.1f} ⭐</b>\n"
-        f"💼 Баланс: <b>{user.stars_balance:.1f} ⭐</b>\n\n"
-        "Поделитесь ссылкой с друзьями — получайте звёзды!"
+        f"💡 Вознаграждение: <b>от 1 до 5 ⭐ за участника</b>\n"
+        f"👤 Приглашено: <b>{ref_count}</b>\n"
+        f"💎 Всего получено: <b>{user.total_earned:.1f} ⭐</b>\n"
+        f"⚡ Баланс: <b>{user.stars_balance:.1f} ⭐</b>\n\n"
+        "Поделись ссылкой — и зарабатывай!"
     )
 
     asyncio.create_task(botohub_views.send_ad(callback.from_user.id, hi=False))

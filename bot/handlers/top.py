@@ -30,14 +30,14 @@ async def cb_top_refs(
     top = await db.get_top_referrers(limit=10)
 
     if not top:
-        text = "🏆 <b>Топ рефералов</b>\n\nПока никто не пригласил друзей. Будьте первым!"
+        text = "🏅 <b>Таблица лидеров</b>\n\nПока нет участников с рефералами. Будь первым!"
     else:
-        lines = ["🏆 <b>Топ рефералов</b>\n"]
+        lines = ["🏅 <b>Таблица лидеров</b>\n"]
         for i, entry in enumerate(top, start=1):
             medal = MEDALS.get(i, f"{i}.")
             lines.append(
-                f"{medal} {entry['name']} — <b>{entry['total_refs']}</b> рефер. "
-                f"| {entry['stars_balance']:.0f} ⭐"
+                f"{medal} {entry['name']} — <b>{entry['total_refs']}</b> чел. "
+                f"· {entry['stars_balance']:.0f} ⭐"
             )
         text = "\n".join(lines)
 

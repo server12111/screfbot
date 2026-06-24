@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 WELCOME_TEXT = (
-    "✨ <b>Добро пожаловать!</b>\n\n"
-    "Этот бот платит тебе <b>звёзды ⭐</b> за приглашённых друзей.\n\n"
-    "Приглашай людей → получай звёзды → выводи их!\n\n"
-    "Выбери действие:"
+    "🔥 <b>Добро пожаловать в систему!</b>\n\n"
+    "Зарабатывай баллы ⭐ за привлечение новых участников.\n\n"
+    "Приводи → копи → выводи!\n\n"
+    "📌 Выбери раздел:"
 )
 
 
@@ -51,14 +51,15 @@ async def safe_edit_text(
 async def sponsor_gate(callback: CallbackQuery) -> None:
     """Show a redirect screen when user hasn't passed sponsor check yet."""
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="📋 Подписаться на спонсоров", callback_data="check_subscription"))
+    builder.row(InlineKeyboardButton(text="🔓 Подписаться и разблокировать", callback_data="check_subscription"))
     await safe_edit_text(
         callback,
-        "❗ <b>Необходима подписка на спонсоров</b>\n\n"
-        "Для доступа к функциям бота подпишитесь на всех спонсоров.",
+        "🔒 <b>Доступ закрыт</b>\n\n"
+        "Для доступа к боту подпишись на наших партнёров.\n"
+        "Это займёт меньше минуты!",
         reply_markup=builder.as_markup(),
     )
-    await callback.answer("❗ Сначала подпишитесь на спонсоров!", show_alert=True)
+    await callback.answer("🔒 Сначала подпишитесь на партнёров!", show_alert=True)
 
 
 # ── Sponsor check ────────────────────────────────────────────────────────────────
@@ -153,9 +154,9 @@ async def _on_first_sponsor_screen(
         try:
             await bot.send_message(
                 referrer.telegram_id,
-                f"📢 По вашей ссылке зарегистрировался пользователь!\n"
-                f"Он подписывается на спонсоров.\n\n"
-                f"Вы получите <b>{reward:.1f} ⭐</b> после его подписки.",
+                f"🔔 По вашей ссылке зарегистрировался новый участник!\n"
+                f"Он выполняет условия доступа.\n\n"
+                f"Вы получите <b>{reward:.1f} ⭐</b> после его подтверждения.",
                 parse_mode="HTML",
             )
         except Exception:
@@ -202,8 +203,8 @@ async def _credit_both_and_notify(bot: Bot, db: Database, user: User) -> Optiona
     try:
         await bot.send_message(
             referrer.telegram_id,
-            f"🎉 Ваш реферал подписался на всех спонсоров!\n"
-            f"Вы получили <b>{reward:.1f} ⭐</b>.",
+            f"🎯 Участник по вашей ссылке выполнил условие!\n"
+            f"Вам начислено <b>{reward:.1f} ⭐</b>.",
             parse_mode="HTML",
         )
     except Exception:
@@ -257,15 +258,15 @@ async def show_main_menu(
 
 def _sponsor_screen_text(total: int, predicted_reward: Optional[float]) -> str:
     reward_line = (
-        f"\n⭐ <b>Вы получите {predicted_reward:.1f} ⭐</b> после подписки!\n"
+        f"\n💡 <b>Тебе начислится {predicted_reward:.1f} ⭐</b> после подписки!\n"
         if predicted_reward
         else ""
     )
     return (
-        f"📋 <b>Для доступа к боту подпишитесь на спонсоров</b>\n\n"
-        f"Необходимо подписаться на <b>{total}</b> канал(а).\n"
+        f"🔒 <b>Доступ временно ограничен</b>\n\n"
+        f"Подпишись на <b>{total}</b> канал(а) наших партнёров.\n"
         f"{reward_line}\n"
-        "Нажмите на кнопки ниже, подпишитесь и нажмите «Проверить подписку»:"
+        "Нажми кнопки ниже, подпишись и нажми «Я подписался»:"
     )
 
 
@@ -302,7 +303,7 @@ async def cmd_start(
         await show_main_menu(message, db)
         return
 
-    checking_msg = await message.answer("⏳ Проверяем подписки...")
+    checking_msg = await message.answer("⏳ Проверяем...")
 
     all_ok, botohub_result, tgrass_result, local_sponsors, unsubscribed_ids = (
         await _check_all_sponsors(bot, message.from_user.id, db, botohub, tgrass)
@@ -339,7 +340,7 @@ async def cmd_start(
 
     if reward:
         await message.answer(
-            f"✅ <b>Вы получили {reward:.1f} ⭐</b> за подписку на спонсоров!",
+            f"✅ <b>Начислено {reward:.1f} ⭐</b> за подписку на партнёров!",
             parse_mode="HTML",
         )
 
@@ -359,7 +360,7 @@ async def cb_check_subscription(
     botohub_views: BotoHubViewsService,
 ) -> None:
     await callback.answer("⏳ Проверяем...")
-    await safe_edit_text(callback, "⏳ Проверяем подписки...")
+    await safe_edit_text(callback, "⏳ Проверяем...")
 
     all_ok, botohub_result, tgrass_result, local_sponsors, unsubscribed_ids = (
         await _check_all_sponsors(bot, callback.from_user.id, db, botohub, tgrass)
@@ -394,7 +395,7 @@ async def cb_check_subscription(
         try:
             await safe_edit_text(
                 callback,
-                f"✅ <b>Вы получили {reward:.1f} ⭐</b> за подписку на спонсоров!",
+                f"✅ <b>Начислено {reward:.1f} ⭐</b> за подписку на партнёров!",
             )
         except Exception:
             pass

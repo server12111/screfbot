@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from aiogram import Router, F, Bot
@@ -31,6 +32,7 @@ class AdminStates(StatesGroup):
     waiting_del_promo_code = State()
     waiting_menu_photo = State()
     waiting_max_sponsors = State()
+    waiting_broadcast_text = State()
 
 
 def _is_admin(user_id: int) -> bool:
@@ -489,6 +491,64 @@ async def msg_admin_max_sponsors(message: Message, state: FSMContext, db: Databa
         reply_markup=admin_panel_keyboard(),
         parse_mode="HTML",
     )
+
+
+@router.callback_query(F.data == "admin_broadcast")
+async def cb_admin_broadcast(callback: CallbackQuery, state: FSMContext) -> None:
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа.", show_alert=True)
+        return
+    await state.set_state(AdminStates.waiting_broadcast_text)
+    await callback.message.edit_text(
+        "📣 <b>Рассылка</b>\n\n"
+        "Отправьте текст сообщения для рассылки всем пользователям.\n"
+        "Поддерживается HTML-форматирование.",
+        reply_markup=admin_back_keyboard(),
+        parse_mode="HTML",
+    )
+    await callback.answer()
+
+
+@router.message(StateFilter(AdminStates.waiting_broadcast_text))
+async def msg_broadcast_text(message: Message, state: FSMContext, db: Database, bot: Bot) -> None:
+    if not _is_admin(message.from_user.id):
+        return
+    if not message.text:
+        await message.answer("❌ Отправьте текстовое сообщение.", reply_markup=admin_back_keyboard())
+        return
+
+    text = message.text
+    await state.clear()
+
+    user_ids = await db.get_all_telegram_ids()
+    total = len(user_ids)
+    sent = 0
+    failed = 0
+
+    status_msg = await message.answer(f"⏳ Рассылка начата... Пользователей: {total}")
+
+    for uid in user_ids:
+        try:
+            await bot.send_message(uid, text, parse_mode="HTML")
+            sent += 1
+        except Exception:
+            failed += 1
+        await asyncio.sleep(0.05)
+
+    try:
+        await status_msg.edit_text(
+            f"✅ <b>Рассылка завершена</b>\n\n"
+            f"📤 Отправлено: <b>{sent}</b>\n"
+            f"❌ Не доставлено: <b>{failed}</b>",
+            reply_markup=admin_panel_keyboard(),
+            parse_mode="HTML",
+        )
+    except Exception:
+        await message.answer(
+            f"✅ <b>Рассылка завершена</b>\n\nОтправлено: {sent} / Не доставлено: {failed}",
+            reply_markup=admin_panel_keyboard(),
+            parse_mode="HTML",
+        )
 
 
 @router.callback_query(F.data == "admin_clear_photo")

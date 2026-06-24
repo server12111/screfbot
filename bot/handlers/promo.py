@@ -34,8 +34,8 @@ async def cb_enter_promo(
     await state.set_state(PromoStates.waiting_code)
     await safe_edit_text(
         callback,
-        "🎟 <b>Промокод</b>\n\n"
-        "Введите промокод для получения звёзд:",
+        "🔑 <b>Активация кода</b>\n\n"
+        "Введи код для получения баллов:",
         reply_markup=cancel_keyboard(),
     )
     await callback.answer()
@@ -50,7 +50,7 @@ async def msg_promo_code(
     botohub_views: BotoHubViewsService,
 ) -> None:
     if not message.text:
-        await message.answer("❌ Отправьте текстовый промокод.", reply_markup=cancel_keyboard())
+        await message.answer("❌ Отправь текстовый код.", reply_markup=cancel_keyboard())
         return
     code = message.text.strip().upper()
 
@@ -58,28 +58,28 @@ async def msg_promo_code(
 
     if not promo:
         await message.answer(
-            "❌ Промокод не найден. Проверьте правильность ввода.",
+            "❌ Код не найден. Проверь и попробуй снова.",
             reply_markup=cancel_keyboard(),
         )
         return
 
     if not promo.is_active:
         await message.answer(
-            "❌ Этот промокод деактивирован.",
+            "❌ Этот код деактивирован.",
             reply_markup=cancel_keyboard(),
         )
         return
 
     if promo.uses_count >= promo.max_uses:
         await message.answer(
-            "❌ Промокод уже исчерпан.",
+            "❌ Лимит использований исчерпан.",
             reply_markup=cancel_keyboard(),
         )
         return
 
     if await db.has_user_used_promocode(promo.id, user.id):
         await message.answer(
-            "❌ Вы уже использовали этот промокод.",
+            "❌ Ты уже активировал этот код.",
             reply_markup=cancel_keyboard(),
         )
         return
@@ -94,10 +94,10 @@ async def msg_promo_code(
 
     await state.clear()
     await message.answer(
-        f"✅ <b>Промокод активирован!</b>\n\n"
-        f"🎟 Код: <code>{promo.code}</code>\n"
+        f"✅ <b>Код активирован!</b>\n\n"
+        f"🔑 Код: <code>{promo.code}</code>\n"
         f"💰 Начислено: <b>+{promo.stars_amount:.0f} ⭐</b>\n\n"
-        f"💼 Текущий баланс: <b>{balance:.1f} ⭐</b>",
+        f"⚡ Баланс: <b>{balance:.1f} ⭐</b>",
         reply_markup=back_to_menu_keyboard(),
         parse_mode="HTML",
     )

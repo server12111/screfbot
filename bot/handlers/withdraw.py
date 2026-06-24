@@ -46,10 +46,10 @@ async def cb_withdraw_stars(
     if fresh_user.stars_balance < min_withdraw:
         await safe_edit_text(
             callback,
-            f"⚠️ <b>Недостаточно звёзд для вывода</b>\n\n"
-            f"Минимальная сумма: <b>{min_withdraw:.0f} ⭐</b>\n"
-            f"Ваш баланс: <b>{fresh_user.stars_balance:.1f} ⭐</b>\n\n"
-            "Приглашайте друзей и получайте больше звёзд!",
+            f"⚠️ <b>Недостаточно баллов</b>\n\n"
+            f"Минимум для вывода: <b>{min_withdraw:.0f} ⭐</b>\n"
+            f"Твой баланс: <b>{fresh_user.stars_balance:.1f} ⭐</b>\n\n"
+            "Приглашай участников и накапливай баллы!",
             reply_markup=back_to_menu_keyboard(),
         )
         await callback.answer()
@@ -59,10 +59,10 @@ async def cb_withdraw_stars(
 
     await safe_edit_text(
         callback,
-        f"💸 <b>Вывод звёзд</b>\n\n"
-        f"💼 Ваш баланс: <b>{fresh_user.stars_balance:.1f} ⭐</b>\n"
+        f"💳 <b>Вывод баллов</b>\n\n"
+        f"⚡ Баланс: <b>{fresh_user.stars_balance:.1f} ⭐</b>\n"
         f"Минимум: <b>{min_withdraw:.0f} ⭐</b>\n\n"
-        "Выберите сумму для вывода:",
+        "Выбери сумму:",
         reply_markup=withdraw_amount_keyboard(fresh_user.stars_balance, min_withdraw),
     )
     await callback.answer()
@@ -101,8 +101,8 @@ async def cb_withdraw_amount(
 
     await safe_edit_text(
         callback,
-        f"💸 <b>Вывод {amount} ⭐</b>\n\n"
-        "Введите ваш Telegram username для получения выплаты\n"
+        f"💳 <b>Вывод {amount} ⭐</b>\n\n"
+        "Укажи свой Telegram username для выплаты\n"
         "(например: @username):",
         reply_markup=cancel_keyboard(),
     )
@@ -163,10 +163,10 @@ async def msg_withdraw_wallet(
 
     await state.clear()
     await message.answer(
-        f"✅ <b>Заявка #{req_id} принята!</b>\n\n"
+        f"✅ <b>Заявка #{req_id} создана!</b>\n\n"
         f"💰 Сумма: <b>{amount:.0f} ⭐</b>\n"
         f"📲 Username: <code>{wallet}</code>\n\n"
-        "Ожидайте выплату от администратора.",
+        "Ожидай выплату от администратора.",
         reply_markup=back_to_menu_keyboard(),
         parse_mode="HTML",
     )

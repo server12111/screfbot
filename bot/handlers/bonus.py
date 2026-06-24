@@ -41,7 +41,7 @@ async def cb_daily_bonus(
             hours = int(remaining.total_seconds() // 3600)
             minutes = int((remaining.total_seconds() % 3600) // 60)
             await callback.answer(
-                f"⏳ Следующий бонус через {hours}ч {minutes}мин",
+                f"💤 Следующий заряд через {hours}ч {minutes}мин",
                 show_alert=True,
             )
             return
@@ -57,10 +57,10 @@ async def cb_daily_bonus(
 
     await safe_edit_text(
         callback,
-        f"🎁 <b>Ежедневный бонус получен!</b>\n\n"
-        f"<b>+{bonus_amount:.0f} ⭐</b> начислено на баланс.\n\n"
-        f"💼 Текущий баланс: <b>{balance:.1f} ⭐</b>\n\n"
-        "Возвращайтесь завтра за новым бонусом!",
+        f"⚡ <b>Ежедневный заряд получен!</b>\n\n"
+        f"<b>+{bonus_amount:.0f} ⭐</b> зачислено на счёт.\n\n"
+        f"⚡ Баланс: <b>{balance:.1f} ⭐</b>\n\n"
+        "Возвращайтесь завтра!",
         reply_markup=back_to_menu_keyboard(),
     )
-    await callback.answer("✅ Бонус получен!")
+    await callback.answer("✅ Получено!")

@@ -37,14 +37,14 @@ async def cb_my_profile(
     username_line = f"@{fresh_user.username}" if fresh_user.username else "—"
 
     text = (
-        "👤 <b>Мой профиль</b>\n\n"
-        f"🆔 ID: <code>{fresh_user.telegram_id}</code>\n"
-        f"👤 Имя: {fresh_user.first_name or '—'}\n"
-        f"📧 Username: {username_line}\n\n"
-        f"💼 Баланс: <b>{fresh_user.stars_balance:.1f} ⭐</b>\n"
-        f"👥 Приглашено: <b>{ref_count}</b> чел.\n"
-        f"🏆 Всего заработано: <b>{fresh_user.total_earned:.1f} ⭐</b>\n\n"
-        f"📅 В боте с: {join_date}"
+        "📊 <b>Личный кабинет</b>\n\n"
+        f"🔹 ID: <code>{fresh_user.telegram_id}</code>\n"
+        f"🔹 Имя: {fresh_user.first_name or '—'}\n"
+        f"🔹 Ник: {username_line}\n\n"
+        f"⚡ Баланс: <b>{fresh_user.stars_balance:.1f} ⭐</b>\n"
+        f"🚀 Приглашено: <b>{ref_count}</b>\n"
+        f"💎 Заработано всего: <b>{fresh_user.total_earned:.1f} ⭐</b>\n\n"
+        f"📅 Регистрация: {join_date}"
     )
 
     asyncio.create_task(botohub_views.send_ad(callback.from_user.id, hi=False))

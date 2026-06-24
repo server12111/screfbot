@@ -18,68 +18,6 @@ from bot.services.tgrass import TgrassService
 
 logger = logging.getLogger(__name__)
 
-SUBSCRIPTION_CHECK_INTERVAL = 7200  # 2 hours
-
-
-async def subscription_check_loop(
-    bot: Bot,
-    db: Database,
-    botohub: BotoHubService,
-    tgrass: TgrassService,
-) -> None:
-    """Background task: every 2h checks if referred users are still subscribed to sponsors.
-    If not — revokes the referrer's reward."""
-    await asyncio.sleep(60)  # initial delay
-    while True:
-        try:
-            records = await db.get_active_tracking_records()
-            logger.info("Subscription check: %d active records", len(records))
-            for record in records:
-                try:
-                    botohub_result = await botohub.check_tasks(record["referred_telegram_id"])
-                    tgrass_result = await tgrass.check_tasks(record["referred_telegram_id"])
-
-                    # Only revoke when API explicitly returned pending tasks.
-                    # Empty tasks + completed=False means a network/API error — skip revocation.
-                    bh_ok = botohub_result.get("completed", True) or not botohub_result.get("tasks")
-                    tg_ok = tgrass_result.get("completed", True) or not tgrass_result.get("tasks")
-                    still_ok = bh_ok and tg_ok
-
-                    await db.update_tracking_last_checked(record["id"])
-
-                    if not still_ok:
-                        reward = record["reward_amount"]
-                        referrer_id = record["referrer_db_id"]
-                        referrer_tg = record["referrer_telegram_id"]
-
-                        await db.deduct_stars(referrer_id, reward)
-                        await db.revoke_tracking_reward(record["id"])
-
-                        try:
-                            await bot.send_message(
-                                referrer_tg,
-                                f"⚠️ Один из ваших рефералов отписался от спонсоров.\n"
-                                f"<b>-{reward:.1f} ⭐</b> списано с баланса.",
-                                parse_mode="HTML",
-                            )
-                        except Exception:
-                            pass
-
-                        logger.info(
-                            "Revoked %.1f stars from referrer %s (referred user %s unsubscribed)",
-                            reward, referrer_tg, record["referred_telegram_id"]
-                        )
-
-                    await asyncio.sleep(0.5)
-
-                except Exception as e:
-                    logger.error("Error checking record id=%s: %s", record["id"], e)
-
-        except Exception as e:
-            logger.error("Subscription check loop error: %s", e)
-
-        await asyncio.sleep(SUBSCRIPTION_CHECK_INTERVAL)
-
 
 async def main() -> None:
     config.validate()
@@ -113,9 +51,6 @@ async def main() -> None:
     async def global_error_handler(event: ErrorEvent) -> bool:
         logger.error("Unhandled error: %s", event.exception, exc_info=event.exception)
         return True
-
-    # Background subscription revocation task
-    asyncio.create_task(subscription_check_loop(bot, db, botohub, tgrass))
 
     logger.info("Bot starting...")
     try:

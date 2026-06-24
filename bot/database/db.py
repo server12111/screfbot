@@ -257,6 +257,13 @@ class Database:
         )
         await self._conn.commit()
 
+    async def get_all_telegram_ids(self) -> list[int]:
+        async with self._conn.execute(
+            "SELECT telegram_id FROM users WHERE is_banned = 0"
+        ) as cur:
+            rows = await cur.fetchall()
+        return [row[0] for row in rows]
+
     # ── Settings ────────────────────────────────────────────────────────────────
 
     async def get_setting(self, key: str) -> Optional[str]:

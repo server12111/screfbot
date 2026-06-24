@@ -15,29 +15,29 @@ def _btn(text: str, callback_data: Optional[str] = None, url: Optional[str] = No
 def main_menu_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
-        _btn("⭐ Заработать звёзды", callback_data="earn_stars"),
-        _btn("💸 Вывести звёзды", callback_data="withdraw_stars"),
+        _btn("🚀 Пригласить друга", callback_data="earn_stars"),
+        _btn("💳 Вывод", callback_data="withdraw_stars"),
     )
     builder.row(
-        _btn("👤 Мой профиль", callback_data="my_profile"),
-        _btn("🎁 Бонус", callback_data="daily_bonus"),
+        _btn("📊 Кабинет", callback_data="my_profile"),
+        _btn("⚡ Бонус", callback_data="daily_bonus"),
     )
     builder.row(
-        _btn("🎟 Промокод", callback_data="enter_promo"),
-        _btn("🏆 Топ рефералов", callback_data="top_refs"),
+        _btn("🔑 Промокод", callback_data="enter_promo"),
+        _btn("🏅 Рейтинг", callback_data="top_refs"),
     )
     return builder.as_markup()
 
 
 def back_to_menu_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.row(_btn("◀️ Главное меню", callback_data="main_menu"))
+    builder.row(_btn("🏠 На главную", callback_data="main_menu"))
     return builder.as_markup()
 
 
 def cancel_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.row(_btn("❌ Отмена", callback_data="cancel"))
+    builder.row(_btn("↩️ Отмена", callback_data="cancel"))
     return builder.as_markup()
 
 
@@ -90,7 +90,7 @@ def sponsors_check_keyboard(
     for i in range(0, len(buttons), 2):
         builder.row(*buttons[i:i + 2])
 
-    builder.row(_btn("✅ Проверить подписку", callback_data="check_subscription"))
+    builder.row(_btn("✔️ Я подписался", callback_data="check_subscription"))
     return builder.as_markup()
 
 
@@ -106,6 +106,7 @@ def admin_panel_keyboard() -> InlineKeyboardMarkup:
     builder.row(_btn("❌ Удалить промокод", callback_data="admin_del_promo"))
     builder.row(_btn("🖼 Фото меню", callback_data="admin_menu_photo"))
     builder.row(_btn("🔢 Макс. спонсоров", callback_data="admin_set_max_sponsors"))
+    builder.row(_btn("📣 Рассылка", callback_data="admin_broadcast"))
     return builder.as_markup()
 
 
